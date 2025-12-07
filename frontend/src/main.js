@@ -101,12 +101,15 @@ testconnectindex.title = "左键：测试网络连接 | 右键：执行自动登
 
 // 自动检测登录页面功能
 detectLoginPageBtn.addEventListener('click', async () => {
+    // 保存原始按钮内容
+    const originalContent = detectLoginPageBtn.innerHTML;
+    
     try {
-        showSnackbar("正在检测校园网登录页面，请稍候...");
+        showSnackbar("正在全网扫描登录入口...");
         
         // 显示加载状态
         detectLoginPageBtn.disabled = true;
-        detectLoginPageBtn.textContent = "检测中...";
+        detectLoginPageBtn.innerHTML = `<span style="font-size: 12px;">⏳ 扫描中...</span>`;
         
         const loginURL = await AutoDetectAndSaveLoginURL();
         
@@ -116,7 +119,7 @@ detectLoginPageBtn.addEventListener('click', async () => {
         // 触发保存
         doneTyping();
         
-        showSnackbar(`成功检测到登录页面: ${loginURL}`);
+        showSnackbar(`已捕获: ${loginURL}`);
         
         // 显示网络状态信息
         const status = await GetNetworkStatus();
@@ -124,11 +127,11 @@ detectLoginPageBtn.addEventListener('click', async () => {
         
     } catch (err) {
         console.error(err);
-        showSnackbar("检测失败: " + err.toString());
+        showSnackbar("未检测到登录页");
     } finally {
         // 恢复按钮状态
         detectLoginPageBtn.disabled = false;
-        detectLoginPageBtn.textContent = "自动检测";
+        detectLoginPageBtn.innerHTML = originalContent;
     }
 });
 
