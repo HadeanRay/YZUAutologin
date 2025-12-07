@@ -104,9 +104,9 @@ func (a *App) Loginyzu() error {
 		}
 	}
 
-	// 等待登录完成
+	// 减少登录完成等待时间
 	log.Println("等待登录完成...")
-	time.Sleep(3 * time.Second)
+	time.Sleep(2 * time.Second)
 
 	log.Println("自动登录流程执行完成")
 	return nil

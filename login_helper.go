@@ -61,38 +61,47 @@ func (sw *SmartWaiter) WaitForPageLoad(timeout time.Duration) error {
 		return fmt.Errorf("page load timeout: %w", err)
 	}
 	
-	// 额外等待一段时间确保动态内容加载完成
-	time.Sleep(2 * time.Second)
+	// 减少额外等待时间，使用更智能的检测
+	time.Sleep(500 * time.Millisecond)
 	
-	// 检查页面是否包含关键元素
+	// 快速检查页面是否包含关键元素
 	checkSelectors := []string{
 		"input", "form", "button",
 		"input[type='text']", "input[type='password']",
 		"input[name*='user']", "input[name*='pass']",
 	}
 	
+	foundElements := false
 	for _, selector := range checkSelectors {
 		elements, err := sw.page.Elements(selector)
 		if err == nil && len(elements) > 0 {
-			log.Printf("页面加载完成，找到元素: %s (数量: %d)", selector, len(elements))
-			return nil
+			if !foundElements {
+				log.Printf("页面加载完成，找到元素: %s (数量: %d)", selector, len(elements))
+				foundElements = true
+			}
+			// 找到关键元素就立即返回，不检查所有选择器
+			if strings.Contains(selector, "input") {
+				return nil
+			}
 		}
 	}
 	
-	log.Printf("页面已加载，但未找到关键表单元素")
+	if !foundElements {
+		log.Printf("页面已加载，但未找到关键表单元素")
+	}
 	return nil
 }
 
 // FindElementRobust 健壮的元素查找
 func (sw *SmartWaiter) FindElementRobust(selector ElementSelector) (*rod.Element, error) {
-	// 增加重试机制
-	maxRetries := 3
+	// 增加重试机制，但减少重试间隔
+	maxRetries := 2  // 减少重试次数
 	var lastErr error
 	
 	for retry := 0; retry < maxRetries; retry++ {
 		if retry > 0 {
 			log.Printf("元素查找重试 %d/%d", retry, maxRetries)
-			time.Sleep(500 * time.Millisecond)
+			time.Sleep(200 * time.Millisecond)  // 减少重试间隔
 		}
 		
 		// 尝试主要选择器
@@ -209,43 +218,43 @@ func GetLoginSteps() []LoginStep {
 			Name:        "等待页面加载",
 			Description: "等待登录页面完全加载",
 			Execute:     waitForPageLoad,
-			MaxRetries:  3,
-			Timeout:     10 * time.Second,
+			MaxRetries:  2,  // 减少重试次数
+			Timeout:     8 * time.Second,  // 减少超时时间
 		},
 		{
 			Name:        "输入用户名",
 			Description: "在用户名输入框中输入账号",
 			Execute:     inputUsername,
-			MaxRetries:  3,
-			Timeout:     5 * time.Second,
+			MaxRetries:  2,  // 减少重试次数
+			Timeout:     3 * time.Second,  // 减少超时时间
 		},
 		{
 			Name:        "输入密码",
 			Description: "在密码输入框中输入密码",
 			Execute:     inputPassword,
-			MaxRetries:  3,
-			Timeout:     5 * time.Second,
+			MaxRetries:  2,  // 减少重试次数
+			Timeout:     3 * time.Second,  // 减少超时时间
 		},
 		{
 			Name:        "提交表单",
 			Description: "提交登录表单",
 			Execute:     submitForm,
 			MaxRetries:  2,
-			Timeout:     5 * time.Second,
+			Timeout:     3 * time.Second,  // 减少超时时间
 		},
 		{
 			Name:        "选择运营商",
 			Description: "选择网络运营商",
 			Execute:     selectOperator,
-			MaxRetries:  3,
-			Timeout:     5 * time.Second,
+			MaxRetries:  2,  // 减少重试次数
+			Timeout:     3 * time.Second,  // 减少超时时间
 		},
 		{
 			Name:        "确认登录",
 			Description: "点击最终登录按钮",
 			Execute:     confirmLogin,
-			MaxRetries:  3,
-			Timeout:     5 * time.Second,
+			MaxRetries:  2,  // 减少重试次数
+			Timeout:     3 * time.Second,  // 减少超时时间
 		},
 	}
 }
@@ -260,8 +269,8 @@ func waitForPageLoad(page *rod.Page, config *Config) error {
 func inputUsername(page *rod.Page, config *Config) error {
 	waiter := NewSmartWaiter(page)
 	
-	// 额外等待确保页面完全稳定
-	time.Sleep(1 * time.Second)
+	// 减少额外等待时间
+	time.Sleep(300 * time.Millisecond)
 	
 	// 定义多种可能的选择器
 	selectors := []ElementSelector{
@@ -339,8 +348,8 @@ func waitForElementReady(element *rod.Element) error {
 		return fmt.Errorf("元素被禁用")
 	}
 	
-	// 短暂等待确保元素稳定
-	time.Sleep(500 * time.Millisecond)
+	// 减少等待时间
+	time.Sleep(100 * time.Millisecond)
 	return nil
 }
 
@@ -379,8 +388,8 @@ func fillInputElement(element *rod.Element, value string, fieldName string) erro
 func inputPassword(page *rod.Page, config *Config) error {
 	waiter := NewSmartWaiter(page)
 	
-	// 额外等待确保页面完全稳定
-	time.Sleep(500 * time.Millisecond)
+	// 减少额外等待时间
+	time.Sleep(200 * time.Millisecond)
 	
 	// 定义多种可能的选择器
 	selectors := []ElementSelector{
@@ -486,8 +495,8 @@ func submitForm(page *rod.Page, config *Config) error {
 func selectOperator(page *rod.Page, config *Config) error {
 	waiter := NewSmartWaiter(page)
 	
-	// 等待页面稳定
-	time.Sleep(2 * time.Second)
+	// 减少等待时间
+	time.Sleep(1 * time.Second)
 	
 	// 点击下拉菜单
 	selectors := []ElementSelector{
@@ -510,8 +519,8 @@ func selectOperator(page *rod.Page, config *Config) error {
 		}
 	}
 	
-	// 等待下拉选项加载
-	time.Sleep(1 * time.Second)
+	// 减少等待下拉选项加载时间
+	time.Sleep(500 * time.Millisecond)
 	
 	// 选择具体的运营商
 	var serviceSelector string
@@ -552,8 +561,8 @@ func selectOperator(page *rod.Page, config *Config) error {
 func confirmLogin(page *rod.Page, config *Config) error {
 	waiter := NewSmartWaiter(page)
 	
-	// 等待页面稳定
-	time.Sleep(1 * time.Second)
+	// 减少等待时间
+	time.Sleep(500 * time.Millisecond)
 	
 	// 查找最终登录按钮
 	selectors := []ElementSelector{
