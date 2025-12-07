@@ -56,15 +56,15 @@ body {
 
 
 s-segmented-button, s-text-field{
-    width: 200px;
-    font-size: large;
+    width: 170px;
+    font-size: 14px;
     --wails-draggable: none;
     z-index: 1;
 }
 
 s-segmented-button-item{
-    padding: 4px;
-    font-size: 13px; 
+    padding: 3px;
+    font-size: 12px; 
     z-index: 1;
 }
 
@@ -85,7 +85,7 @@ s-divider{
 
 
 .right-panel {
-    width: 220px;
+    width: 240px;
     height: 600px;
     /* background-color: rgb(45, 45, 45); 可根据需要更改背景颜色 */
     position: absolute;
@@ -94,12 +94,23 @@ s-divider{
     z-index: 0;
 }
 
+#config {
+    padding: 10px 0;
+}
+
+#login {
+    margin-top: 10px;
+    padding: 10px 0;
+    border-top: 1px solid rgba(128, 128, 128, 0.2);
+}
+
 .grid-container {
     display: grid;
-    grid-template-columns: 80px 1fr;
+    grid-template-columns: 70px 1fr;
     row-gap: 8px;
-    max-width: 300px;
+    max-width: 240px;
     padding: 0 10px;
+    box-sizing: border-box;
 }
 
 .grid-item {
@@ -147,6 +158,6 @@ h2{
 
 #buttons s-button {
     flex: 1;
-    min-width: 120px;
-    max-width: 150px;
+    min-width: 100px;
+    max-width: 130px;
 }

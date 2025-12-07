@@ -95,6 +95,10 @@ testconnectindex.addEventListener('contextmenu', async (e) => {
     }
 });
 
+// 添加工具提示
+detectLoginPageBtn.title = "自动检测校园网登录页面，无需手动输入URL";
+testconnectindex.title = "左键：测试网络连接 | 右键：执行自动登录";
+
 // 自动检测登录页面功能
 detectLoginPageBtn.addEventListener('click', async () => {
     try {
