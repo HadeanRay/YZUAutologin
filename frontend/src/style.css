@@ -106,10 +106,10 @@ s-divider{
 
 .grid-container {
     display: grid;
-    grid-template-columns: 70px 1fr;
-    row-gap: 8px;
+    grid-template-columns: 65px 1fr;
+    row-gap: 6px;
     max-width: 240px;
-    padding: 0 10px;
+    padding: 0 8px;
     box-sizing: border-box;
 }
 
@@ -117,30 +117,32 @@ s-divider{
     display: flex;
     align-items: center;
     justify-content: center;
-    height: 50px;
+    height: 45px;
 }
 
 .rgrid-item {
     display: flex;
     align-items: center;
     justify-content: left;
-    margin: 5px 10px;
+    margin: 4px 8px;
     z-index: 1;
     flex-wrap: wrap;
 }
 
 
 h1{
-    padding-top: 20px;
+    padding-top: 15px;
     margin: 0;
-    font-size: 24px;
+    font-size: 22px;
+    text-align: center;
+    width: 100%;
 }
 
 h2{
-    padding: 10px;
+    padding: 8px;
     text-align: center;
     margin: 0;
-    font-size: 16px;
+    font-size: 15px;
     font-weight: 500;
 }
 
