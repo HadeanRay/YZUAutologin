@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"log"
+	"strings"
 	"time"
 
 	"github.com/go-rod/rod"
@@ -61,45 +62,107 @@ func (sw *SmartWaiter) WaitForPageLoad(timeout time.Duration) error {
 	}
 	
 	// 额外等待一段时间确保动态内容加载完成
-	time.Sleep(1 * time.Second)
+	time.Sleep(2 * time.Second)
+	
+	// 检查页面是否包含关键元素
+	checkSelectors := []string{
+		"input", "form", "button",
+		"input[type='text']", "input[type='password']",
+		"input[name*='user']", "input[name*='pass']",
+	}
+	
+	for _, selector := range checkSelectors {
+		elements, err := sw.page.Elements(selector)
+		if err == nil && len(elements) > 0 {
+			log.Printf("页面加载完成，找到元素: %s (数量: %d)", selector, len(elements))
+			return nil
+		}
+	}
+	
+	log.Printf("页面已加载，但未找到关键表单元素")
 	return nil
 }
 
 // FindElementRobust 健壮的元素查找
 func (sw *SmartWaiter) FindElementRobust(selector ElementSelector) (*rod.Element, error) {
-	// 尝试主要选择器
-	if selector.Primary != "" {
-		element, err := sw.page.Element(selector.Primary)
-		if err == nil {
-			return element, nil
+	// 增加重试机制
+	maxRetries := 3
+	var lastErr error
+	
+	for retry := 0; retry < maxRetries; retry++ {
+		if retry > 0 {
+			log.Printf("元素查找重试 %d/%d", retry, maxRetries)
+			time.Sleep(500 * time.Millisecond)
+		}
+		
+		// 尝试主要选择器
+		if selector.Primary != "" {
+			element, err := sw.page.Element(selector.Primary)
+			if err == nil {
+				log.Printf("通过主要选择器找到元素: %s", selector.Primary)
+				return element, nil
+			}
+			lastErr = err
+		}
+		
+		// 尝试备选选择器
+		for _, alt := range selector.Alternatives {
+			element, err := sw.page.Element(alt)
+			if err == nil {
+				log.Printf("通过备选选择器找到元素: %s", alt)
+				return element, nil
+			}
+		}
+		
+		// 尝试通过属性查找
+		for _, attr := range selector.Attributes {
+			elements, err := sw.page.Elements(fmt.Sprintf("[%s]", attr))
+			if err == nil && len(elements) > 0 {
+				log.Printf("通过属性找到元素: [%s] (数量: %d)", attr, len(elements))
+				// 返回第一个可见的元素
+				for _, element := range elements {
+					if visible, _ := element.Visible(); visible {
+						return element, nil
+					}
+				}
+				return elements[0], nil
+			}
+		}
+		
+		// 尝试通过文本内容查找
+		for _, text := range selector.TextContains {
+			element, err := sw.page.Element(fmt.Sprintf("//*[contains(text(), '%s')]", text))
+			if err == nil {
+				log.Printf("通过文本内容找到元素: 包含 '%s'", text)
+				return element, nil
+			}
+		}
+		
+		// 尝试模糊匹配
+		if retry == maxRetries-1 {
+			// 最后一次尝试：查找所有输入框
+			elements, err := sw.page.Elements("input")
+			if err == nil && len(elements) > 0 {
+				log.Printf("找到 %d 个输入框，尝试匹配", len(elements))
+				for _, element := range elements {
+					// 检查元素属性是否匹配
+					for _, attr := range selector.Attributes {
+						attrValue, _ := element.Attribute(attr)
+						if attrValue != nil {
+							for _, text := range selector.TextContains {
+								if strings.Contains(strings.ToLower(*attrValue), strings.ToLower(text)) {
+									log.Printf("通过模糊匹配找到元素: %s='%s'", attr, *attrValue)
+									return element, nil
+								}
+							}
+						}
+					}
+				}
+			}
 		}
 	}
 	
-	// 尝试备选选择器
-	for _, alt := range selector.Alternatives {
-		element, err := sw.page.Element(alt)
-		if err == nil {
-			return element, nil
-		}
-	}
-	
-	// 尝试通过属性查找
-	for _, attr := range selector.Attributes {
-		elements, err := sw.page.Elements(fmt.Sprintf("[%s]", attr))
-		if err == nil && len(elements) > 0 {
-			return elements[0], nil
-		}
-	}
-	
-	// 尝试通过文本内容查找
-	for _, text := range selector.TextContains {
-		element, err := sw.page.Element(fmt.Sprintf("//*[contains(text(), '%s')]", text))
-		if err == nil {
-			return element, nil
-		}
-	}
-	
-	return nil, fmt.Errorf("element not found with any selector")
+	return nil, fmt.Errorf("element not found with any selector: %w", lastErr)
 }
 
 // RetryOperation 带重试的操作
@@ -197,84 +260,173 @@ func waitForPageLoad(page *rod.Page, config *Config) error {
 func inputUsername(page *rod.Page, config *Config) error {
 	waiter := NewSmartWaiter(page)
 	
+	// 额外等待确保页面完全稳定
+	time.Sleep(1 * time.Second)
+	
 	// 定义多种可能的选择器
 	selectors := []ElementSelector{
 		{
 			Primary:      "input[name='username']",
-			Alternatives: []string{"input[name='username_tip']", "input[type='text']", "input[id*='username']", "input[class*='username']"},
-			Attributes:   []string{"placeholder", "name", "id"},
-			TextContains: []string{"用户名", "账号", "学号", "username"},
+			Alternatives: []string{
+				"input[name='username_tip']", 
+				"input[type='text']", 
+				"input[id*='username']", 
+				"input[class*='username']",
+				"input[placeholder*='用户']",
+				"input[placeholder*='账号']",
+				"input[placeholder*='学号']",
+				"input[placeholder*='Username']",
+				"input[placeholder*='Account']",
+				"#username",
+				".username",
+				"input:text",
+			},
+			Attributes:   []string{"placeholder", "name", "id", "class", "type"},
+			TextContains: []string{"用户名", "账号", "学号", "username", "account", "user"},
 		},
+	}
+	
+	// 先尝试查找所有文本输入框
+	elements, err := page.Elements("input[type='text']")
+	if err == nil && len(elements) > 0 {
+		log.Printf("找到 %d 个文本输入框，尝试第一个", len(elements))
+		element := elements[0]
+		
+		// 检查元素是否可见和可点击
+		if err := waitForElementReady(element); err != nil {
+			log.Printf("第一个文本输入框不可用: %v", err)
+		} else {
+			return fillInputElement(element, config.Countindex, "用户名")
+		}
 	}
 	
 	for _, selector := range selectors {
 		element, err := waiter.FindElementRobust(selector)
 		if err == nil {
-			// 清空输入框并输入新内容
-			if err := element.Click(proto.InputMouseButtonLeft, 1); err != nil {
-				return fmt.Errorf("点击用户名输入框失败: %w", err)
+			return fillInputElement(element, config.Countindex, "用户名")
+		}
+	}
+	
+	// 最后尝试：查找所有输入框，排除密码框
+	allInputs, err := page.Elements("input")
+	if err == nil {
+		for _, input := range allInputs {
+			inputType, _ := input.Attribute("type")
+			if inputType != nil && *inputType == "password" {
+				continue // 跳过密码框
 			}
 			
-			// 全选并清空
-			if err := element.SelectAllText(); err != nil {
-				return fmt.Errorf("选择文本失败: %w", err)
+			if err := fillInputElement(input, config.Countindex, "用户名"); err == nil {
+				return nil
 			}
-			
-			if err := element.Input(""); err != nil {
-				return fmt.Errorf("清空输入框失败: %w", err)
-			}
-			
-			// 输入用户名
-			if err := element.Input(config.Countindex); err != nil {
-				return fmt.Errorf("输入用户名失败: %w", err)
-			}
-			
-			log.Printf("成功输入用户名")
-			return nil
 		}
 	}
 	
 	return fmt.Errorf("找不到用户名输入框")
 }
 
+// waitForElementReady 等待元素准备好
+func waitForElementReady(element *rod.Element) error {
+	// 检查元素是否可见
+	visible, err := element.Visible()
+	if err != nil || !visible {
+		return fmt.Errorf("元素不可见")
+	}
+	
+	// 检查元素是否启用
+	disabled, err := element.Attribute("disabled")
+	if err == nil && disabled != nil && *disabled == "true" {
+		return fmt.Errorf("元素被禁用")
+	}
+	
+	// 短暂等待确保元素稳定
+	time.Sleep(500 * time.Millisecond)
+	return nil
+}
+
+// fillInputElement 填充输入框的通用函数
+func fillInputElement(element *rod.Element, value string, fieldName string) error {
+	// 等待元素准备好
+	if err := waitForElementReady(element); err != nil {
+		return fmt.Errorf("%s输入框未准备好: %w", fieldName, err)
+	}
+	
+	// 点击输入框
+	if err := element.Click(proto.InputMouseButtonLeft, 1); err != nil {
+		return fmt.Errorf("点击%s输入框失败: %w", fieldName, err)
+	}
+	
+	// 全选并清空
+	if err := element.SelectAllText(); err != nil {
+		log.Printf("无法选择%s文本，尝试直接输入: %v", fieldName, err)
+		// 如果选择失败，尝试直接输入
+	}
+	
+	if err := element.Input(""); err != nil {
+		return fmt.Errorf("清空%s输入框失败: %w", fieldName, err)
+	}
+	
+	// 输入值
+	if err := element.Input(value); err != nil {
+		return fmt.Errorf("输入%s失败: %w", fieldName, err)
+	}
+	
+	log.Printf("成功输入%s", fieldName)
+	return nil
+}
+
 // inputPassword 输入密码
 func inputPassword(page *rod.Page, config *Config) error {
 	waiter := NewSmartWaiter(page)
+	
+	// 额外等待确保页面完全稳定
+	time.Sleep(500 * time.Millisecond)
 	
 	// 定义多种可能的选择器
 	selectors := []ElementSelector{
 		{
 			Primary:      "input[type='password']",
-			Alternatives: []string{"input[name='password']", "input[name='pwd_tip']", "input[type='password']", "input[id*='password']", "input[class*='password']"},
-			Attributes:   []string{"type", "name", "id"},
-			TextContains: []string{"密码", "password"},
+			Alternatives: []string{
+				"input[name='password']", 
+				"input[name='pwd_tip']", 
+				"input[id*='password']", 
+				"input[class*='password']",
+				"input[placeholder*='密码']",
+				"input[placeholder*='Password']",
+				"input[placeholder*='pass']",
+				"#password",
+				".password",
+			},
+			Attributes:   []string{"type", "name", "id", "class", "placeholder"},
+			TextContains: []string{"密码", "password", "pass"},
 		},
+	}
+	
+	// 先尝试查找所有密码输入框
+	elements, err := page.Elements("input[type='password']")
+	if err == nil && len(elements) > 0 {
+		log.Printf("找到 %d 个密码输入框，尝试第一个", len(elements))
+		element := elements[0]
+		return fillInputElement(element, config.Passwordindex, "密码")
 	}
 	
 	for _, selector := range selectors {
 		element, err := waiter.FindElementRobust(selector)
 		if err == nil {
-			// 点击输入框
-			if err := element.Click(proto.InputMouseButtonLeft, 1); err != nil {
-				return fmt.Errorf("点击密码输入框失败: %w", err)
+			return fillInputElement(element, config.Passwordindex, "密码")
+		}
+	}
+	
+	// 最后尝试：查找所有输入框，找到密码类型的
+	allInputs, err := page.Elements("input")
+	if err == nil {
+		for _, input := range allInputs {
+			inputType, _ := input.Attribute("type")
+			if inputType != nil && *inputType == "password" {
+				if err := fillInputElement(input, config.Passwordindex, "密码"); err == nil {
+					return nil
+				}
 			}
-			
-			// 全选并清空
-			if err := element.SelectAllText(); err != nil {
-				return fmt.Errorf("选择密码文本失败: %w", err)
-			}
-			
-			if err := element.Input(""); err != nil {
-				return fmt.Errorf("清空密码输入框失败: %w", err)
-			}
-			
-			// 输入密码
-			if err := element.Input(config.Passwordindex); err != nil {
-				return fmt.Errorf("输入密码失败: %w", err)
-			}
-			
-			log.Printf("成功输入密码")
-			return nil
 		}
 	}
 	
