@@ -5,8 +5,12 @@ export function DisableAutoStart():Promise<void>;
 
 export function EnableAutoStart():Promise<void>;
 
+export function LoginWithAdvancedOptions(arg1:boolean,arg2:number):Promise<void>;
+
 export function Loginyzu():Promise<void>;
 
-export function ReadData():Promise<{[key: string]: string}>;
+export function ReadData():Promise<Record<string, string>>;
 
-export function SaveValue(arg1:{[key: string]: string}):Promise<void>;
+export function SaveValue(arg1:Record<string, string>):Promise<void>;
+
+export function TestConnection():Promise<string>;

@@ -8,14 +8,14 @@ import (
     "github.com/wailsapp/wails/v2/pkg/options/assetserver"
 	// "github.com/wailsapp/wails/v2/pkg/menu"
 	// "context"
-	"github.com/getlantern/systray"
-	"github.com/wailsapp/wails/v2/pkg/runtime"
+	// "github.com/getlantern/systray"
+	// "github.com/wailsapp/wails/v2/pkg/runtime"
 	"github.com/wailsapp/wails/v2/pkg/options/windows"
 )
 
 
 //go:embed favicon.ico
-var appIcon []byte
+// var appIcon []byte
 
 //go:embed all:frontend/dist
 var assets embed.FS
@@ -24,7 +24,7 @@ var assets embed.FS
 func main() {
 	// Create an instance of the app structure
 	app := NewApp()
-	go systray.Run(func() { onReady(app) }, onExit)
+	// go systray.Run(func() { onReady(app) }, onExit)
 
 	// Create application with options
 	err := wails.Run(&options.App{
@@ -59,29 +59,29 @@ func main() {
 
 }
 
-func onReady(a *App) {
-	systray.SetIcon(appIcon)
-    systray.SetTitle("My Wails App")
-    systray.SetTooltip("My Wails App Tooltip")
+// func onReady(a *App) {
+// 	// systray.SetIcon(appIcon)
+//     // systray.SetTitle("My Wails App")
+//     // systray.SetTooltip("My Wails App Tooltip")
 
-    mShow := systray.AddMenuItem("Show", "Show the application")
-    mHide := systray.AddMenuItem("Hide", "Hide the application")
-    mQuit := systray.AddMenuItem("Quit", "Quit the application")
+//     // mShow := systray.AddMenuItem("Show", "Show the application")
+//     // mHide := systray.AddMenuItem("Hide", "Hide the application")
+//     // mQuit := systray.AddMenuItem("Quit", "Quit the application")
 
-    go func() {
-        for {
-            select {
-            case <-mShow.ClickedCh:
-                runtime.Show(a.ctx)
-            case <-mHide.ClickedCh:
-                runtime.Hide(a.ctx)
-            case <-mQuit.ClickedCh:
-                runtime.Quit(a.ctx)
-            }
-        }
-    }()
-}
+//     // go func() {
+//     //     for {
+//     //         select {
+//     //         case <-mShow.ClickedCh:
+//     //             runtime.Show(a.ctx)
+//     //         case <-mHide.ClickedCh:
+//     //             runtime.Hide(a.ctx)
+//     //         case <-mQuit.ClickedCh:
+//     //             runtime.Quit(a.ctx)
+//     //         }
+//     //     }
+//     // }()
+// }
 
-func onExit() {
-    // 清理工作
-}
+// func onExit() {
+//     // 清理工作
+// }

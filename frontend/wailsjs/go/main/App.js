@@ -10,6 +10,10 @@ export function EnableAutoStart() {
   return window['go']['main']['App']['EnableAutoStart']();
 }
 
+export function LoginWithAdvancedOptions(arg1, arg2) {
+  return window['go']['main']['App']['LoginWithAdvancedOptions'](arg1, arg2);
+}
+
 export function Loginyzu() {
   return window['go']['main']['App']['Loginyzu']();
 }
@@ -20,4 +24,8 @@ export function ReadData() {
 
 export function SaveValue(arg1) {
   return window['go']['main']['App']['SaveValue'](arg1);
+}
+
+export function TestConnection() {
+  return window['go']['main']['App']['TestConnection']();
 }

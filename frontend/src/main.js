@@ -1,7 +1,7 @@
 import './style.css';
 
-import {SaveValue, ReadData, Loginyzu, EnableAutoStart, DisableAutoStart} from '../wailsjs/go/main/App';
-import { Hide } from '../wailsjs/runtime/runtime';
+import {SaveValue, ReadData, Loginyzu, EnableAutoStart, DisableAutoStart, TestConnection} from '../wailsjs/go/main/App';
+import { Quit } from '../wailsjs/runtime/runtime';
 import 'sober';
 
 let webindex = document.getElementById("webindex");
@@ -69,13 +69,77 @@ autostartindex.addEventListener('click', () => {
 
 testconnectindex.addEventListener('click', async () => {
     try {
-        await Loginyzu();
-        showSnackbar("测试连接已触发");
+        const result = await TestConnection();
+        showSnackbar("连接测试完成，请查看控制台");
+        console.log("连接测试结果:");
+        console.log(result);
+        
+        // 可选：将结果显示在页面上
+        showDetailedResult(result);
     } catch (err) {
         console.error(err);
-        showSnackbar(err.toString());
+        showSnackbar("连接测试失败: " + err.toString());
     }
 });
+
+// 添加实际登录按钮功能
+testconnectindex.addEventListener('contextmenu', async (e) => {
+    e.preventDefault(); // 阻止右键菜单
+    try {
+        await Loginyzu();
+        showSnackbar("正在执行自动登录...");
+    } catch (err) {
+        console.error(err);
+        showSnackbar("登录失败: " + err.toString());
+    }
+});
+
+// 显示详细测试结果的函数
+function showDetailedResult(result) {
+    // 创建一个模态对话框或通知区域显示结果
+    const resultDiv = document.createElement('div');
+    resultDiv.style.cssText = `
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: white;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        z-index: 1000;
+        max-width: 400px;
+        white-space: pre-line;
+    `;
+    
+    resultDiv.innerHTML = `
+        <h3>连接测试结果</h3>
+        <p>${result}</p>
+        <button id="closeResult" style="
+            margin-top: 10px;
+            padding: 8px 16px;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        ">关闭</button>
+    `;
+    
+    document.body.appendChild(resultDiv);
+    
+    // 添加关闭按钮事件
+    document.getElementById('closeResult').addEventListener('click', () => {
+        document.body.removeChild(resultDiv);
+    });
+    
+    // 5秒后自动关闭
+    setTimeout(() => {
+        if (document.body.contains(resultDiv)) {
+            document.body.removeChild(resultDiv);
+        }
+    }, 5000);
+}
 
 ReadData()
     .then((data) => {
@@ -113,7 +177,7 @@ let exitelement = document.getElementById("exit");
 
 exitelement.addEventListener('click', () => {
     try {
-        Hide();
+        Quit();
     } catch (err) {
         console.error(err); 
     }

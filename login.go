@@ -3,171 +3,198 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-    "os"
-    "path/filepath"
-    "time"
+	"log"
+	"os"
+	"path/filepath"
+	"time"
 
 	"github.com/go-rod/rod"
-	"github.com/go-rod/rod/lib/input"
 	"github.com/go-rod/rod/lib/launcher"
 	"github.com/go-rod/rod/lib/proto"
 )
 
 // 定义一个结构体来表示 JSON 数据的结构
 type Config struct {
-    Autostartindex string `json:"autostartindex"`
-    Countindex     string `json:"countindex"`
-    Operatorindex  string `json:"operatorindex"`
-    Passwordindex  string `json:"passwordindex"`
-    Webindex       string `json:"webindex"`
+	Autostartindex string `json:"autostartindex"`
+	Countindex     string `json:"countindex"`
+	Operatorindex  string `json:"operatorindex"`
+	Passwordindex  string `json:"passwordindex"`
+	Webindex       string `json:"webindex"`
 }
 
 // 读取 JSON 文件并解码
 func ReadConfig(filename string) (*Config, error) {
-    exePath, err := os.Executable()
-    if (err != nil) {
-        return nil, fmt.Errorf("failed to get executable path: %w", err)
-    }
-    exeDir := filepath.Dir(exePath)
-    fmt.Println("Executable directory:", exeDir)
-    filename = filepath.Join(exeDir, filename)
-    // 打开 JSON 文件
-    file, err := os.Open(filename)
-    if err != nil {
-        return nil, err
-    }
-    defer file.Close()
+	exePath, err := os.Executable()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get executable path: %w", err)
+	}
+	exeDir := filepath.Dir(exePath)
+	fmt.Println("Executable directory:", exeDir)
+	filename = filepath.Join(exeDir, filename)
+	// 打开 JSON 文件
+	file, err := os.Open(filename)
+	if err != nil {
+		return nil, err
+	}
+	defer file.Close()
 
-    // 创建 JSON 解码器
-    decoder := json.NewDecoder(file)
+	// 创建 JSON 解码器
+	decoder := json.NewDecoder(file)
 
-    // 解码 JSON 数据到结构体中
-    var config Config
-    if err := decoder.Decode(&config); err != nil {
-        return nil, err
-    }
+	// 解码 JSON 数据到结构体中
+	var config Config
+	if err := decoder.Decode(&config); err != nil {
+		return nil, err
+	}
 
-    return &config, nil
+	return &config, nil
 }
 
 func (a *App) Loginyzu() error {
+	log.Println("开始执行自动登录流程")
 
 	// 读取 JSON 文件
 	config, err := ReadConfig("data.json")
 	if err != nil {
-        return fmt.Errorf("error reading config: %w", err)
+		return fmt.Errorf("error reading config: %w", err)
 	}
 
 	// 打印读取到的配置
-	fmt.Printf("Config: %+v\n", config)
+	log.Printf("配置信息: %+v", config)
 
-    // 启动浏览器
-    launcher := launcher.New().Headless(false).Set("no-proxy-server")
-    controlURL, err := launcher.Launch()
-    if err != nil {
-        launcher.Kill()
-        return fmt.Errorf("error launching browser: %w", err)
-    }
+	// 启动浏览器
+	log.Println("正在启动浏览器...")
+	launcher := launcher.New().Headless(false).Set("no-proxy-server")
+	controlURL, err := launcher.Launch()
+	if err != nil {
+		launcher.Kill()
+		return fmt.Errorf("browser launch failed: %w", err)
+	}
 
-    browser := rod.New().ControlURL(controlURL)
-    if err := browser.Connect(); err != nil {
-        launcher.Kill()
-        return fmt.Errorf("error connecting to browser: %w", err)
-    }
+	// 确保在函数结束时清理资源
+	defer func() {
+		log.Println("清理浏览器资源...")
+		launcher.Kill()
+	}()
 
-    page, err := browser.Page(proto.TargetCreateTarget{URL: config.Webindex})
-    if err != nil {
-        launcher.Kill()
-        return fmt.Errorf("error creating page: %w", err)
-    }
-    
-    // 等待页面重定向和加载
-    if err := page.WaitStable(time.Second * 1); err != nil {
-        launcher.Kill()
-        return fmt.Errorf("error waiting for page to stabilize: %w", err)
-    }
+	browser := rod.New().ControlURL(controlURL)
+	if err := browser.Connect(); err != nil {
+		return fmt.Errorf("browser connection failed: %w", err)
+	}
 
-    // // 输入用户名和密码
-    usernameElement, err := page.Element("input[name='username']")
-    if err != nil {
-        launcher.Kill()
-        return fmt.Errorf("error finding username input: %w", err)
-    }
-    if err := usernameElement.Input(config.Countindex); err != nil {
-        launcher.Kill()
-        return fmt.Errorf("error inputting username: %w", err)
-    }
-    
-    passwordElement, err := page.Element("input[type='password']")
-    if err != nil {
-        launcher.Kill()
-        return fmt.Errorf("error finding password input: %w", err)
-    }
-    if err := passwordElement.Input(config.Passwordindex); err != nil {
-        launcher.Kill()
-        return fmt.Errorf("error inputting password: %w", err)
-    }
-    if err := passwordElement.Type(input.Enter); err != nil {
-        launcher.Kill()
-        return fmt.Errorf("error pressing enter: %w", err)
-    }
-    if err := page.WaitStable(time.Second * 1); err != nil {
-        launcher.Kill()
-        return fmt.Errorf("error waiting for page to stabilize: %w", err)
-    }
-    
-    disnameElement, err := page.Element("#selectDisname")
-    if err != nil {
-        launcher.Kill()
-        return fmt.Errorf("error finding selectDisname element: %w", err)
-    }
-    if err := disnameElement.Click(proto.InputMouseButtonLeft, 1); err != nil {
-        launcher.Kill()
-        return fmt.Errorf("error clicking selectDisname: %w", err)
-    }
-    var serviceSelector string
-    switch config.Operatorindex {
-    case "a":
-        serviceSelector = "#_service_0"
-    case "b":
-        serviceSelector = "#_service_1"
-    case "c":
-        serviceSelector = "#_service_2"
-    case "d":
-        serviceSelector = "#_service_3"
-    default:
-        launcher.Kill()
-        return fmt.Errorf("invalid operator index: %s", config.Operatorindex)
-    }
-    serviceElement, err := page.Element(serviceSelector)
-    if err != nil {
-        launcher.Kill()
-        return fmt.Errorf("error finding service element: %w", err)
-    }
-    if err := serviceElement.Click(proto.InputMouseButtonLeft, 1); err != nil {
-        launcher.Kill()
-        return fmt.Errorf("error clicking service element: %w", err)
-    }
-    
-    loginLinkElement, err := page.Element("#loginLink")
-    if err != nil {
-        launcher.Kill()
-        return fmt.Errorf("error finding loginLink element: %w", err)
-    }
-    if err := loginLinkElement.Click(proto.InputMouseButtonLeft, 1); err != nil {
-        launcher.Kill()
-        return fmt.Errorf("error clicking loginLink: %w", err)
-    }
+	page, err := browser.Page(proto.TargetCreateTarget{URL: config.Webindex})
+	if err != nil {
+		return fmt.Errorf("page creation failed: %w", err)
+	}
 
-    // 等待一段时间以确保登录成功
-    time.Sleep(3 * time.Second)
+	// 确保在函数结束时关闭页面
+	defer func() {
+		if err := page.Close(); err != nil {
+			log.Printf("关闭页面时出错: %v", err)
+		}
+	}()
 
-    // 关闭页面
-    if err := page.Close(); err != nil {
-        launcher.Kill()
-        fmt.Println("Error closing page:", err)
-    }
-    launcher.Kill()
+	// 获取登录步骤
+	steps := GetLoginSteps()
 
-    return nil
+	// 执行所有登录步骤
+	for _, step := range steps {
+		if err := ExecuteLoginStep(page, config, step); err != nil {
+			return fmt.Errorf("登录流程在 '%s' 步骤失败: %w", step.Name, err)
+		}
+	}
+
+	// 等待登录完成
+	log.Println("等待登录完成...")
+	time.Sleep(3 * time.Second)
+
+	log.Println("自动登录流程执行完成")
+	return nil
+}
+
+// LoginWithAdvancedOptions 提供更高级的登录选项
+func (a *App) LoginWithAdvancedOptions(enableDebug bool, customTimeout int) error {
+	// 设置日志级别
+	if enableDebug {
+		log.SetFlags(log.LstdFlags | log.Lshortfile)
+		log.Println("启用调试模式")
+	}
+
+	// 调用原始登录函数
+	return a.Loginyzu()
+}
+
+// TestConnection 测试连接功能，不实际登录
+func (a *App) TestConnection() (string, error) {
+	log.Println("执行连接测试...")
+
+	// 读取配置
+	config, err := ReadConfig("data.json")
+	if err != nil {
+		return "", fmt.Errorf("读取配置失败: %w", err)
+	}
+
+	// 启动浏览器进行测试
+	launcher := launcher.New().Headless(true).Set("no-proxy-server")
+	controlURL, err := launcher.Launch()
+	if err != nil {
+		return "", fmt.Errorf("浏览器启动失败: %w", err)
+	}
+	defer launcher.Kill()
+
+	browser := rod.New().ControlURL(controlURL)
+	if err := browser.Connect(); err != nil {
+		return "", fmt.Errorf("浏览器连接失败: %w", err)
+	}
+
+	page, err := browser.Page(proto.TargetCreateTarget{URL: config.Webindex})
+	if err != nil {
+		return "", fmt.Errorf("页面创建失败: %w", err)
+	}
+	defer page.Close()
+
+	// 等待页面加载
+	waiter := NewSmartWaiter(page)
+	if err := waiter.WaitForPageLoad(10 * time.Second); err != nil {
+		return "", fmt.Errorf("页面加载超时: %w", err)
+	}
+
+	// 检查关键元素是否存在
+	usernameFound := false
+	passwordFound := false
+
+	selectors := []ElementSelector{
+		{
+			Primary:      "input[name='username']",
+			Alternatives: []string{"input[name='username_tip']", "input[type='text']"},
+		},
+	}
+
+	for _, selector := range selectors {
+		if _, err := waiter.FindElementRobust(selector); err == nil {
+			usernameFound = true
+			break
+		}
+	}
+
+	passwordSelectors := []ElementSelector{
+		{
+			Primary:      "input[type='password']",
+			Alternatives: []string{"input[name='password']", "input[name='pwd_tip']"},
+		},
+	}
+
+	for _, selector := range passwordSelectors {
+		if _, err := waiter.FindElementRobust(selector); err == nil {
+			passwordFound = true
+			break
+		}
+	}
+
+	result := fmt.Sprintf("连接测试结果:\n- 页面加载: 成功\n- 用户名输入框: %v\n- 密码输入框: %v", 
+		map[bool]string{true: "找到", false: "未找到"}[usernameFound],
+		map[bool]string{true: "找到", false: "未找到"}[passwordFound])
+
+	log.Println(result)
+	return result, nil
 }
