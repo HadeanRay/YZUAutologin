@@ -71,7 +71,7 @@ autostartindex.addEventListener('click', () => {
 testconnectindex.addEventListener('click', async () => {
     try {
         const result = await TestConnection();
-        showSnackbar("连接测试完成，请查看控制台");
+        showSnackbar("连接测试完成");
         console.log("连接测试结果:");
         console.log(result);
         
@@ -88,7 +88,7 @@ testconnectindex.addEventListener('contextmenu', async (e) => {
     e.preventDefault(); // 阻止右键菜单
     try {
         await Loginyzu();
-        showSnackbar("正在执行自动登录...");
+        showSnackbar("正在登录...");
     } catch (err) {
         console.error(err);
         showSnackbar("登录失败: " + err.toString());

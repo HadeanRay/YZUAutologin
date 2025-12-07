@@ -53,10 +53,13 @@ func (nd *NetworkDetector) DetectLoginPage() (string, error) {
 
 	// 尝试多个可能的入口点
 	testURLs := []string{
+		"http://10.10.10.10",             // 常见校园网网关（优先测试）
+		"http://10.0.0.1",                // 常见路由器/网关地址
+		"http://192.168.1.1",             // 常见局域网网关
+		"http://192.168.0.1",             // 常见局域网网关
 		"http://www.baidu.com",           // 常用网站
 		"http://www.google.com",          // 国际网站
 		"http://www.yzu.edu.cn",          // 扬州大学官网
-		"http://10.10.10.10",             // 常见校园网网关
 		"http://1.1.1.1",                 // 常见测试地址
 		"http://captive.apple.com",       // Apple 网络检测
 		"http://connectivitycheck.gstatic.com", // Google 网络检测
