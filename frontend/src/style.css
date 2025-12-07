@@ -68,6 +68,14 @@ s-segmented-button-item{
     z-index: 1;
 }
 
+s-button {
+    font-size: 14px;
+    min-width: 80px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
 s-divider{
     margin: 10px;
     padding: 0;
@@ -89,37 +97,56 @@ s-divider{
 .grid-container {
     display: grid;
     grid-template-columns: 80px 1fr;
-    row-gap: 10px;
+    row-gap: 8px;
     max-width: 300px;
+    padding: 0 10px;
 }
 
 .grid-item {
     display: flex;
     align-items: center;
     justify-content: center;
-    height: 60px;
+    height: 50px;
 }
 
 .rgrid-item {
     display: flex;
     align-items: center;
     justify-content: left;
-    margin: 10px;
+    margin: 5px 10px;
     z-index: 1;
+    flex-wrap: wrap;
 }
 
 
 h1{
     padding-top: 20px;
+    margin: 0;
+    font-size: 24px;
 }
 
 h2{
     padding: 10px;
     text-align: center;
+    margin: 0;
+    font-size: 16px;
+    font-weight: 500;
 }
 
 #buttons{
     display: flex;
     align-items: center;
-    justify-content: space-around;
+    justify-content: space-between;
+    gap: 10px;
+    width: 100%;
+}
+
+#buttons s-switch {
+    flex-shrink: 0;
+}
+
+#buttons s-button {
+    flex: 1;
+    min-width: 120px;
+    max-width: 150px;
 }

@@ -25,9 +25,9 @@
       <div class="grid-item">
           <h2>网页</h2>
       </div>
-      <div class="rgrid-item">
-          <s-text-field label="请输入网页" id="webindex"></s-text-field>
-          <s-button id="detectLoginPage" style="margin-top: 8px; width: 100%;">自动检测登录页面</s-button>
+      <div class="rgrid-item" style="flex-direction: column; align-items: stretch;">
+          <s-text-field label="请输入网页" id="webindex" style="width: 100%; margin-bottom: 8px;"></s-text-field>
+          <s-button id="detectLoginPage" style="width: 100%;">自动检测</s-button>
       </div>
 
       <div class="grid-item">
@@ -77,7 +77,7 @@
 
     <div id="buttons" class="rgrid-item">
         <s-switch checked="false" id="autostartindex"></s-switch>
-        <s-button id="testconnectindex"> 测试连接 (左键) / 登录 (右键) </s-button>
+        <s-button id="testconnectindex">测试连接/登录</s-button>
     </div>
 
 </div>

@@ -124,7 +124,7 @@ detectLoginPageBtn.addEventListener('click', async () => {
     } finally {
         // 恢复按钮状态
         detectLoginPageBtn.disabled = false;
-        detectLoginPageBtn.textContent = "自动检测登录页面";
+        detectLoginPageBtn.textContent = "自动检测";
     }
 });
 
