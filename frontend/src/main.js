@@ -1,6 +1,6 @@
 import './style.css';
 
-import {SaveValue, ReadData, Loginyzu, EnableAutoStart, DisableAutoStart, TestConnection} from '../wailsjs/go/main/App';
+import {SaveValue, ReadData, Loginyzu, EnableAutoStart, DisableAutoStart, TestConnection, DetectNetworkLoginPage, AutoDetectAndSaveLoginURL, GetNetworkStatus} from '../wailsjs/go/main/App';
 import { Quit } from '../wailsjs/runtime/runtime';
 import 'sober';
 
@@ -11,6 +11,7 @@ let operatorindex = document.getElementById("operatorindex");
 let autostartindex = document.getElementById("autostartindex");
 let operatorindex_items = document.querySelectorAll('s-segmented-button-item');
 let testconnectindex = document.getElementById("testconnectindex");
+let detectLoginPageBtn = document.getElementById("detectLoginPage");
 
 // 设置一个定时器变量
 let typingTimer;
@@ -93,6 +94,107 @@ testconnectindex.addEventListener('contextmenu', async (e) => {
         showSnackbar("登录失败: " + err.toString());
     }
 });
+
+// 自动检测登录页面功能
+detectLoginPageBtn.addEventListener('click', async () => {
+    try {
+        showSnackbar("正在检测校园网登录页面，请稍候...");
+        
+        // 显示加载状态
+        detectLoginPageBtn.disabled = true;
+        detectLoginPageBtn.textContent = "检测中...";
+        
+        const loginURL = await AutoDetectAndSaveLoginURL();
+        
+        // 更新输入框
+        webindex.value = loginURL;
+        
+        // 触发保存
+        doneTyping();
+        
+        showSnackbar(`成功检测到登录页面: ${loginURL}`);
+        
+        // 显示网络状态信息
+        const status = await GetNetworkStatus();
+        showNetworkStatus(status);
+        
+    } catch (err) {
+        console.error(err);
+        showSnackbar("检测失败: " + err.toString());
+    } finally {
+        // 恢复按钮状态
+        detectLoginPageBtn.disabled = false;
+        detectLoginPageBtn.textContent = "自动检测登录页面";
+    }
+});
+
+// 显示网络状态信息
+function showNetworkStatus(status) {
+    const statusDiv = document.createElement('div');
+    statusDiv.style.cssText = `
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: white;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        z-index: 1000;
+        max-width: 500px;
+        max-height: 80vh;
+        overflow-y: auto;
+    `;
+    
+    let statusHTML = `<h3>网络状态信息</h3>`;
+    
+    if (status.connected) {
+        statusHTML += `<p style="color: green;">✅ ${status.connectivity_result}</p>`;
+    } else {
+        statusHTML += `<p style="color: orange;">⚠️ ${status.connectivity_result}</p>`;
+        
+        if (status.needs_authentication && status.login_url) {
+            statusHTML += `<p style="color: blue;">🔗 检测到登录页面: ${status.login_url}</p>`;
+        } else if (status.detection_error) {
+            statusHTML += `<p style="color: red;">❌ 检测错误: ${status.detection_error}</p>`;
+        }
+    }
+    
+    // 显示原始状态数据（调试用）
+    statusHTML += `<hr><details><summary>详细数据</summary><pre style="font-size: 12px; overflow: auto;">${JSON.stringify(status, null, 2)}</pre></details>`;
+    
+    statusHTML += `<button id="closeStatus" style="
+        margin-top: 10px;
+        padding: 8px 16px;
+        background: #007bff;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+    ">关闭</button>`;
+    
+    statusDiv.innerHTML = statusHTML;
+    document.body.appendChild(statusDiv);
+    
+    // 添加关闭按钮事件
+    document.getElementById('closeStatus').addEventListener('click', () => {
+        document.body.removeChild(statusDiv);
+    });
+    
+    // 点击外部关闭
+    statusDiv.addEventListener('click', (e) => {
+        if (e.target === statusDiv) {
+            document.body.removeChild(statusDiv);
+        }
+    });
+    
+    // 10秒后自动关闭
+    setTimeout(() => {
+        if (document.body.contains(statusDiv)) {
+            document.body.removeChild(statusDiv);
+        }
+    }, 10000);
+}
 
 // 显示详细测试结果的函数
 function showDetailedResult(result) {

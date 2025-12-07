@@ -5,6 +5,7 @@ import (
     "encoding/json"
     "fmt"
     "os"
+    "time"
     "golang.org/x/sys/windows/registry"
     "path/filepath"
 )
@@ -102,4 +103,62 @@ func (a *App) ReadData() (map[string]string, error) {
     }
 
     return data, nil
+}
+
+// DetectNetworkLoginPage 自动检测校园网登录页面
+func (a *App) DetectNetworkLoginPage() (string, error) {
+	detector, err := NewNetworkDetector(30 * time.Second)
+	if err != nil {
+		return "", fmt.Errorf("创建网络检测器失败: %w", err)
+	}
+	defer detector.Close()
+
+	loginURL, err := detector.DetectLoginPage()
+	if err != nil {
+		return "", fmt.Errorf("检测登录页面失败: %w", err)
+	}
+
+	return loginURL, nil
+}
+
+// GetNetworkStatus 获取网络状态信息
+func (a *App) GetNetworkStatus() (map[string]interface{}, error) {
+	detector, err := NewNetworkDetector(30 * time.Second)
+	if err != nil {
+		return nil, fmt.Errorf("创建网络检测器失败: %w", err)
+	}
+	defer detector.Close()
+
+	status, err := detector.GetNetworkStatus()
+	if err != nil {
+		return nil, fmt.Errorf("获取网络状态失败: %w", err)
+	}
+
+	return status, nil
+}
+
+// AutoDetectAndSaveLoginURL 自动检测并保存登录URL
+func (a *App) AutoDetectAndSaveLoginURL() (string, error) {
+	loginURL, err := a.DetectNetworkLoginPage()
+	if err != nil {
+		return "", err
+	}
+
+	// 读取现有数据
+	data, err := a.ReadData()
+	if err != nil {
+		// 如果文件不存在，创建新数据
+		data = make(map[string]string)
+	}
+
+	// 更新登录URL
+	data["webindex"] = loginURL
+
+	// 保存数据
+	err = a.SaveValue(data)
+	if err != nil {
+		return "", fmt.Errorf("保存登录URL失败: %w", err)
+	}
+
+	return loginURL, nil
 }
