@@ -1,36 +1,36 @@
+/* --- 全局变量定义 --- */
 :root {
-    --primary-color: #009688;
+    /* 配色系统 */
+    --primary-color: #009688; /* 核心主色 - 青色 */
     --primary-hover: #00796b;
-    --bg-light: #f5f7fa;
-    --bg-dark: #202124;
-    --panel-light: rgba(255, 255, 255, 0.85);
-    --panel-dark: rgba(45, 45, 45, 0.6);
-    --text-main-light: #2c3e50;
-    --text-main-dark: #e8eaed;
-    --shadow-light: 0 8px 32px 0 rgba(31, 38, 135, 0.1);
-    --shadow-dark: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
-    --radius: 12px;
+    
+    /* 明亮模式变量 */
+    --bg-light: #ffffff;
+    --bg-secondary-light: #f5f7fa; /* 用于辅助按钮背景 */
+    --text-main-light: #333333;
+    --text-sub-light: #666666;
+    --border-light: #e0e0e0;
+
+    /* 暗黑模式变量 */
+    --bg-dark: #2d2d2d;
+    --bg-secondary-dark: #383838;
+    --text-main-dark: #ffffff;
+    --text-sub-dark: #aaaaaa;
+    --border-dark: #404040;
 }
 
+/* --- 基础设置 --- */
 html, body, s-page {
     height: 100%;
     width: 100%;
     overflow: hidden;
     margin: 0;
     padding: 0;
+    font-family: "Nunito", system-ui, -apple-system, sans-serif;
     background-color: transparent;
     --wails-draggable: drag;
-    font-family: "Nunito", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 }
 
-body {
-    user-select: none;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-}
-
-/* 字体定义 */
 @font-face {
     font-family: "Nunito";
     font-style: normal;
@@ -38,188 +38,207 @@ body {
     src: local(""), url("assets/fonts/nunito-v16-latin-regular.woff2") format("woff2");
 }
 
-/* 退出按钮美化 */
+/* --- 主面板布局 --- */
+/* 修正：移除悬浮卡片样式，改为铺满窗口 */
+.right-panel {
+    width: 100%;
+    height: 100%;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    box-sizing: border-box;
+    /* 取消边框和阴影，由软件窗口自行接管 */
+    border: none;
+    box-shadow: none;
+    border-radius: 0;
+}
+
+/* --- 退出按钮 --- */
 #exit {
     position: absolute;
-    top: 10px;
-    right: 10px;
-    width: 28px;
-    height: 28px;
-    border-radius: 50%;
-    background-color: rgba(128, 128, 128, 0.1);
-    border: 1px solid rgba(128, 128, 128, 0.2);
-    color: var(--text-main-light);
-    font-weight: bold;
+    top: 0;
+    right: 0;
+    width: 40px; /* 加大点击区域 */
+    height: 30px;
+    background-color: transparent;
+    border: none;
+    color: var(--text-sub-light);
     cursor: pointer;
     z-index: 100;
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: all 0.3s ease;
-    font-size: 14px;
-    line-height: 1;
+    transition: background-color 0.2s;
     --wails-draggable: none;
 }
 
 #exit:hover {
-    background-color: #ff5f56;
-    border-color: #ff5f56;
+    background-color: #ff4d4f;
     color: white;
-    transform: rotate(90deg);
 }
 
-/* 主面板容器 */
-.right-panel {
-    width: 100%;
-    height: 100%;
-    box-sizing: border-box;
-    position: relative;
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
+/* --- 中间内容滚动区 --- */
+#config {
+    flex: 1; /* 占据剩余空间 */
+    padding: 10px 20px; /* 左右留白 */
+    overflow-y: auto;
     display: flex;
     flex-direction: column;
 }
 
-/* 明暗模式配色 */
-@media (prefers-color-scheme: light) {
-    .right-panel {
-        background-color: var(--panel-light);
-        color: var(--text-main-light);
-        border-left: 1px solid rgba(255, 255, 255, 0.5);
-    }
-    #exit { color: #5f6368; }
-    h1 { color: var(--primary-color); }
-    h2 { color: #5f6368; }
+/* 标题 */
+h1 {
+    font-size: 20px;
+    font-weight: 700;
+    margin: 20px 0 20px 0; /* 增加顶部距离避免遮挡 */
+    text-align: center;
+    width: 100%;
 }
 
-@media (prefers-color-scheme: dark) {
-    .right-panel {
-        background-color: var(--panel-dark);
-        color: var(--text-main-dark);
-        border-left: 1px solid rgba(255, 255, 255, 0.05);
-    }
-    #exit { 
-        background-color: rgba(255, 255, 255, 0.1);
-        color: #e8eaed; 
-    }
-    h1 { color: #4db6ac; } /* lighter teal for dark mode */
-    h2 { color: #9aa0a6; }
-}
-
-/* 布局调整 */
-#config {
-    padding: 20px 15px 5px 15px;
-    flex: 1;
-    overflow-y: auto;
-}
-
-#login {
-    margin-top: auto;
-    padding: 15px 15px 20px 15px;
-    background: rgba(0,0,0,0.02);
-    border-top: 1px solid rgba(128, 128, 128, 0.1);
-}
-
+/* Grid 布局保持原有逻辑，但在CSS中视觉优化 */
 .grid-container {
-    display: grid;
-    grid-template-columns: 60px 1fr;
-    row-gap: 12px; /* 增加间距 */
-    align-items: center;
+    display: flex;
+    flex-direction: column;
+    gap: 12px; /* 每个输入项之间的间距 */
 }
 
+/* 标签行 */
 .grid-item {
     display: flex;
     align-items: center;
-    justify-content: flex-end; /* 标签右对齐，看起来更整齐 */
-    padding-right: 10px;
-    height: 100%;
-}
-
-.rgrid-item {
-    display: flex;
-    align-items: center;
-    justify-content: flex-start;
-    z-index: 1;
-    flex-wrap: wrap;
-    position: relative;
-}
-
-/* 组件样式覆写 */
-h1 {
-    padding: 10px 0 20px 0;
-    margin: 0;
-    font-size: 24px;
-    font-weight: 700;
-    text-align: center;
-    width: 100%;
-    letter-spacing: 0.5px;
+    margin-bottom: -8px; /* 拉近标签与输入框的距离 */
+    padding-left: 4px;
 }
 
 h2 {
-    margin: 0;
     font-size: 13px;
     font-weight: 600;
+    margin: 0;
+    opacity: 0.8;
 }
 
-s-text-field {
+/* 输入控件容器 */
+.rgrid-item {
+    display: flex;
+    flex-direction: column;
     width: 100%;
-    font-size: 14px;
+    z-index: 1;
+}
+
+/* 控件宽度修正 */
+s-text-field, s-segmented-button {
+    width: 100%;
     --wails-draggable: none;
 }
-
-/* 运营商选择器微调 */
-s-segmented-button {
-    width: 100%;
-    font-size: 12px;
-    --wails-draggable: none;
-}
-
 s-segmented-button-item {
-    padding: 4px 0; 
-    min-height: 28px;
+    padding: 2px;
+    font-size: 12px;
+}
+
+/* --- 修正：自动检测按钮 --- */
+#detectLoginPage {
+    margin-top: 6px;
+    width: 100%;
+    height: 30px;
+    font-size: 13px;
+    border-radius: 4px;
+    border: none;
+    cursor: pointer;
+    /* 强制居中 */
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 /* 分割线 */
 s-divider {
     margin: 15px 0;
     height: 1px;
-    grid-column: span 2;
-    opacity: 0.5;
+    width: 100%;
+    opacity: 0.3;
 }
 
-/* 底部按钮区域 */
+/* --- 底部登录区 --- */
+#login {
+    padding: 15px 20px 20px 20px; /* 底部留多一点空间 */
+    border-top: 1px solid; /* 边框颜色在明暗模式中定义 */
+    background-color: transparent;
+}
+
+/* 隐藏原本的 "自动启动" 标题，直接整合到底部栏 */
+#login .grid-item {
+    display: none;
+}
+
+/* --- 底部按钮布局优化 --- */
 #buttons {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 12px;
     width: 100%;
+    gap: 15px;
 }
 
-/* 自动检测按钮美化 - 使其像个小标签或次级按钮 */
-#detectLoginPage {
-    margin-top: 4px;
-    width: 100%;
-    font-size: 12px;
-    height: 28px;
-    opacity: 0.9;
+/* 左侧开关的包裹容器 */
+.switch-wrapper {
+    display: flex;
+    align-items: center; /* 垂直居中核心代码 */
+    gap: 8px; /* 开关和文字的间距 */
+    flex-shrink: 0;
+    height: 100%;
 }
 
-/* 登录按钮强调 */
+/* 修正 s-switch 组件本身可能存在的边距干扰 */
+s-switch {
+    margin: 0; 
+    padding: 0;
+    /* 确保组件本身不被压缩 */
+    flex-shrink: 0; 
+    /* 修正点击区域错位：显式移除 transform 或定位干扰 */
+    transform: none; 
+}
+
+/* 开关旁边的文字样式 */
+.switch-label {
+    font-size: 13px;
+    font-weight: 500;
+    cursor: default; /* 提示这不是按钮，但开关可点 */
+    user-select: none;
+    line-height: 1; /* 防止行高撑开布局 */
+}
+
+/* 登录按钮保持不变，确保填满右侧 */
 #testconnectindex {
-    flex: 1;
+    flex-grow: 1;
+    height: 36px;
+    font-size: 14px;
     font-weight: 600;
-    --s-button-font-size: 15px;
+    border: none;
+    color: #ffffff !important;
+    background-color: var(--primary-color);
+    border-radius: 6px;
 }
 
-/* 滚动条隐藏但保留功能 */
+#testconnectindex:hover {
+    background-color: var(--primary-hover);
+}
+
+/* --- 明暗模式适配补充 --- */
+
+@media (prefers-color-scheme: light) {
+    .switch-label {
+        color: var(--text-main-light);
+    }
+}
+
+@media (prefers-color-scheme: dark) {
+    .switch-label {
+        color: var(--text-main-dark);
+    }
+}
+
+/* 滚动条隐藏但可滚动 */
 ::-webkit-scrollbar {
-    width: 4px;
-}
-::-webkit-scrollbar-track {
+    width: 0px;
     background: transparent;
-}
-::-webkit-scrollbar-thumb {
-    background: rgba(128, 128, 128, 0.2);
-    border-radius: 2px;
 }

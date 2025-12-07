@@ -8,48 +8,40 @@
 <body>
 
 <s-page theme="auto">
-    <!-- 退出按钮移出 right-panel，或保持绝对定位 -->
-    <button id="exit" title="退出程序">✕</button>
-
     <div class="right-panel">
         
+        <!-- 退出按钮 -->
+        <button id="exit" title="关闭">✕</button>
+
+        <!-- 内容区域 -->
         <div id="config">
-            <div class="rgrid-item" id="title-container">
-                <h1>YzuAutologin</h1>
+            <div class="rgrid-item">
+                <h1>YZU Login</h1>
             </div>
 
             <div class="grid-container">
+                
                 <!-- 网页 -->
-                <div class="grid-item">
-                    <h2>网页</h2>
-                </div>
-                <div class="rgrid-item" style="flex-direction: column; width: 100%;">
+                <div class="grid-item"><h2>认证地址</h2></div>
+                <div class="rgrid-item">
                     <s-text-field placeholder="1.1.1.1" id="webindex"></s-text-field>
-                    <s-button id="detectLoginPage" type="text">
-                        <span style="font-size: 12px;">🔍 自动检测网址</span>
-                    </s-button>
+                    <s-button id="detectLoginPage">🔍 自动检测地址</s-button>
                 </div>
 
                 <!-- 账号 -->
-                <div class="grid-item">
-                    <h2>账号</h2>
-                </div>
+                <div class="grid-item"><h2>账号</h2></div>
                 <div class="rgrid-item">
                     <s-text-field placeholder="学号/工号" id="countindex"></s-text-field>
                 </div>
 
                 <!-- 密码 -->
-                <div class="grid-item">
-                    <h2>密码</h2>
-                </div>
+                <div class="grid-item"><h2>密码</h2></div>
                 <div class="rgrid-item">
                     <s-text-field type="password" placeholder="••••••" id="passwordindex"></s-text-field>
                 </div>
 
                 <!-- 运营商 -->
-                <div class="grid-item">
-                    <h2>运营商</h2>
-                </div>
+                <div class="grid-item"><h2>ISP 运营商</h2></div>
                 <div class="rgrid-item">
                     <s-segmented-button id="operatorindex">
                         <s-segmented-button-item value="a">校园</s-segmented-button-item>
@@ -59,27 +51,27 @@
                     </s-segmented-button>
                 </div>
 
-                <s-divider></s-divider>
             </div>
         </div>
 
+        <!-- 底部固定区域 -->
         <div id="login">
-            <div class="grid-container">
-                <div class="grid-item">
-                    <h2>自启动</h2>
-                </div>
-                <div id="buttons" class="rgrid-item">
+            <!-- 占位div，配合原有结构 -->
+            <div class="grid-item"></div> 
+            
+            <div id="buttons">
+                <!-- 左侧：开关包裹容器 -->
+                <div class="switch-wrapper">
                     <s-switch id="autostartindex"></s-switch>
-                    <!-- 加上 type="tonal" 或 "filled" 如果 sober 支持，增加视觉权重 -->
-                    <s-button id="testconnectindex" style="background-color: var(--primary-color); color: white;">
-                        立即登录
-                    </s-button>
+                    <span class="switch-label">自动连接</span>
                 </div>
+                
+                <!-- 右侧：登录按钮 -->
+                <s-button id="testconnectindex">立即登录</s-button>
             </div>
         </div>
 
     </div>
-
 </s-page>
 
 <script src="./src/main.js" type="module"></script>
